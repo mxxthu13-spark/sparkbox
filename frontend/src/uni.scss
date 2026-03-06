@@ -1,0 +1,66 @@
+/* SparkBox 全局样式变量 */
+$primary: #6366f1;
+$primary-light: #e0e7ff;
+$success: #10b981;
+$warning: #f59e0b;
+$danger: #ef4444;
+$text-primary: #111827;
+$text-secondary: #6b7280;
+$text-tertiary: #9ca3af;
+$bg-primary: #f8f8fa;
+$bg-card: #ffffff;
+$border: #e5e7eb;
+$radius-sm: 8rpx;
+$radius: 16rpx;
+$radius-lg: 24rpx;
+$radius-xl: 32rpx;
+$shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+
+body, page {
+  background-color: $bg-primary;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: $text-primary;
+}
+
+.safe-bottom {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.card {
+  background: $bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow;
+}
+
+.btn-primary {
+  background: $primary;
+  color: #fff;
+  border-radius: $radius;
+  padding: 24rpx 0;
+  text-align: center;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.btn-ghost {
+  border: 2rpx solid $primary;
+  color: $primary;
+  border-radius: $radius;
+  padding: 20rpx 32rpx;
+  text-align: center;
+  font-size: 28rpx;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 16rpx;
+  border-radius: 100rpx;
+  font-size: 22rpx;
+  background: $primary-light;
+  color: $primary;
+  margin-right: 8rpx;
+  margin-bottom: 8rpx;
+}

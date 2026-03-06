@@ -1,0 +1,41 @@
+{
+  "name": "闪念盒子",
+  "appid": "__UNI__SPARKBOX",
+  "description": "捕捉每一道灵感的闪光",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false
+    },
+    "usingComponents": true,
+    "permission": {
+      "scope.writePhotosAlbum": {
+        "desc": "保存卡片图片到相册"
+      }
+    }
+  },
+  "app-plus": {
+    "usingComponents": true,
+    "nvueStyleCompiler": "uni-compiler",
+    "compiler": {
+      "independentMini": true
+    },
+    "splashscreen": {
+      "alwaysShowBeforeRender": true,
+      "waiting": true,
+      "autoclose": true,
+      "delay": 0
+    },
+    "modules": {},
+    "distribute": {
+      "android": {
+        "permissions": ["<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>"]
+      },
+      "ios": {},
+      "sdkConfigs": {}
+    }
+  }
+}

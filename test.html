@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SparkBox 测试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        h1 { color: #333; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 5px; background: #6366f1; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #5558e3; }
+        .result { margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 5px; white-space: pre-wrap; }
+        .error { background: #fee; color: #c00; }
+        .success { background: #efe; color: #060; }
+    </style>
+</head>
+<body>
+    <h1>SparkBox 问题诊断测试页面</h1>
+    
+    <div class="section">
+        <h2>测试1：获取最新想法（测试时间显示）</h2>
+        <button onclick="testLatestThought()">获取最新想法</button>
+        <div id="result1" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>测试2：按分类查询想法（测试分类筛选）</h2>
+        <label>分类ID: <input type="text" id="categoryId" placeholder="输入分类ID"></label>
+        <button onclick="testCategoryFilter()">查询</button>
+        <div id="result2" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>测试3：获取回顾详情（测试AI内容）</h2>
+        <label>回顾ID: <input type="text" id="reviewId" placeholder="输入回顾ID"></label>
+        <button onclick="testReviewDetail()">获取详情</button>
+        <div id="result3" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>测试4：删除回顾（测试DELETE请求）</h2>
+        <label>回顾ID: <input type="text" id="deleteReviewId" placeholder="输入要删除的回顾ID"></label>
+        <button onclick="testDeleteReview()">删除</button>
+        <div id="result4" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        const token = localStorage.getItem('access_token') || '';
+
+        async function apiRequest(method, path, data = null) {
+            const config = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            };
+            
+            if (method !== 'DELETE' && data) {
+                config.body = JSON.stringify(data);
+            }
+            
+            const response = await fetch(API_BASE + path, config);
+            const result = await response.json();
+            return { status: response.status, data: result };
+        }
+
+        async function testLatestThought() {
+            const resultDiv = document.getElementById('result1');
+            resultDiv.textContent = '请求中...';
+            
+            try {
+                const { status, data } = await apiRequest('GET', '/thoughts/?page=1&page_size=1');
+                
+                if (status === 200 && data.items && data.items.length > 0) {
+                    const thought = data.items[0];
+                    const createdAt = thought.created_at;
+                    
+                    // 解析时间
+                    const match = createdAt.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+                    if (match) {
+                        const d = new Date(
+                            parseInt(match[1]),
+                            parseInt(match[2]) - 1,
+                            parseInt(match[3]),
+                            parseInt(match[4]),
+                            parseInt(match[5]),
+                            parseInt(match[6])
+                        );
+                        const now = new Date();
+                        const diffHours = (now - d) / 3600000;
+                        
+                        resultDiv.className = 'result success';
+                        resultDiv.textContent = `✓ 成功获取最新想法\n\n` +
+                            `内容: ${thought.content.substring(0, 50)}...\n` +
+                            `创建时间（原始）: ${createdAt}\n` +
+                            `创建时间（解析）: ${d}\n` +
+                            `当前时间: ${now}\n` +
+                            `时间差: ${diffHours.toFixed(2)} 小时\n\n` +
+                            `${Math.abs(diffHours) < 1 ? '✓ 时间正常' : '⚠ 时间差异: ' + diffHours.toFixed(2) + ' 小时'}`;
+                    } else {
+                        resultDiv.className = 'result error';
+                        resultDiv.textContent = `❌ 时间格式不匹配: ${createdAt}`;
+                    }
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ 没有想法记录`;
+                }
+            } catch (e) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 错误: ${e.message}`;
+            }
+        }
+
+        async function testCategoryFilter() {
+            const categoryId = document.getElementById('categoryId').value;
+            const resultDiv = document.getElementById('result2');
+            
+            if (!categoryId) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '请输入分类ID';
+                return;
+            }
+            
+            resultDiv.textContent = '请求中...';
+            
+            try {
+                // 先查询所有
+                const { data: allData } = await apiRequest('GET', '/thoughts/?page=1&page_size=100');
+                const totalAll = allData.total;
+                
+                // 再查询指定分类
+                const { status, data } = await apiRequest('GET', `/thoughts/?category_ids=${categoryId}&page=1&page_size=100`);
+                
+                if (status === 200) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✓ 查询成功\n\n` +
+                        `所有想法数量: ${totalAll}\n` +
+                        `分类 ${categoryId} 的想法数量: ${data.total}\n\n` +
+                        `${data.total < totalAll ? '✓ 分类筛选生效' : '⚠ 分类筛选可能未生效'}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ 请求失败: ${JSON.stringify(data)}`;
+                }
+            } catch (e) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 错误: ${e.message}`;
+            }
+        }
+
+        async function testReviewDetail() {
+            const reviewId = document.getElementById('reviewId').value;
+            const resultDiv = document.getElementById('result3');
+            
+            if (!reviewId) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '请输入回顾ID';
+                return;
+            }
+            
+            resultDiv.textContent = '请求中...';
+            
+            try {
+                const { status, data } = await apiRequest('GET', `/reviews/${reviewId}`);
+                
+                if (status === 200) {
+                    resultDiv.className = 'result ' + (data.ai_content ? 'success' : 'error');
+                    resultDiv.textContent = `${data.ai_content ? '✓' : '❌'} 获取回顾详情\n\n` +
+                        `标题: ${data.title}\n` +
+                        `AI内容长度: ${data.ai_content ? data.ai_content.length : 0} 字符\n` +
+                        `分类IDs: ${JSON.stringify(data.category_ids)}\n` +
+                        `想法数量: ${data.thought_count}\n` +
+                        `实际想法数: ${data.thoughts ? data.thoughts.length : 0}\n\n` +
+                        `${data.ai_content ? '✓ 有AI内容' : '❌ 缺少AI内容'}\n` +
+                        `${data.category_ids && data.category_ids.length > 0 ? '✓ 有分类信息' : '⚠ 没有分类信息'}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ 请求失败: ${JSON.stringify(data)}`;
+                }
+            } catch (e) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 错误: ${e.message}`;
+            }
+        }
+
+        async function testDeleteReview() {
+            const reviewId = document.getElementById('deleteReviewId').value;
+            const resultDiv = document.getElementById('result4');
+            
+            if (!reviewId) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '请输入回顾ID';
+                return;
+            }
+            
+            if (!confirm('确定要删除这条回顾吗？')) {
+                return;
+            }
+            
+            resultDiv.textContent = '请求中...';
+            
+            try {
+                const { status, data } = await apiRequest('DELETE', `/reviews/${reviewId}`);
+                
+                if (status === 200) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✓ 删除成功\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ 删除失败 (${status})\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (e) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 错误: ${e.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
