@@ -29,6 +29,10 @@ async def get_db():
 
 
 async def init_db():
-    async with engine.begin() as conn:
-        # 使用 checkfirst=True 避免重复创建表
-        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        # 如果表已存在，忽略错误
+        if "already exists" not in str(e):
+            raise
