@@ -1,8 +1,15 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from sqlalchemy import String, DateTime, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database import Base
+
+# 中国时区 UTC+8
+CHINA_TZ = timezone(timedelta(hours=8))
+
+def get_china_now():
+    """获取中国当前时间"""
+    return datetime.now(CHINA_TZ).replace(tzinfo=None)
 
 
 class User(Base):
@@ -17,12 +24,12 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     ai_provider: Mapped[str] = mapped_column(String(20), default="deepseek")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=False), default=get_china_now
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default=get_china_now,
+        onupdate=get_china_now,
     )
 
     thoughts: Mapped[list["Thought"]] = relationship("Thought", back_populates="user", cascade="all, delete-orphan")

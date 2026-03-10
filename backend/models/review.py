@@ -1,8 +1,15 @@
 import uuid
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 from sqlalchemy import String, DateTime, ForeignKey, Text, JSON, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database import Base
+
+# 中国时区 UTC+8
+CHINA_TZ = timezone(timedelta(hours=8))
+
+def get_china_now():
+    """获取中国当前时间"""
+    return datetime.now(CHINA_TZ).replace(tzinfo=None)
 
 
 class Review(Base):
@@ -24,7 +31,7 @@ class Review(Base):
     ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     ai_keywords: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=False), default=get_china_now
     )
 
     user: Mapped["User"] = relationship("User", back_populates="reviews")

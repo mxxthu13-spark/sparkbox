@@ -9,7 +9,7 @@ CHINA_TZ = timezone(timedelta(hours=8))
 
 def get_china_now():
     """获取中国当前时间（不带时区信息，但是中国时间）"""
-    return datetime.now()  # 系统时间就是中国时间
+    return datetime.now(CHINA_TZ).replace(tzinfo=None)  # UTC+8 时间，去掉时区信息
 
 
 class Thought(Base):
